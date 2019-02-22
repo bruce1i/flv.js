@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="flv.js"></script>
+<video id="videoElement"></video>
+<script>
+    var flvUrl = "http://pull-tx-dev-live.sunlands.com/live/fd57cb0f8e855dfacac33b2ecfc028be6a8707fa.flv?bizid=32807&txSecret=b2666f508537d923f0109f7ef7109f25&txTime=5c70a7f4";
+    var liveStreamStartTimestamp = null
+
+    if (flvjs.isSupported()) {
+        var videoElement = document.getElementById('videoElement');
+        videoElement.addEventListener('timeupdate', function (data) {
+            var liveStreamPlayTimestamp = liveStreamStartTimestamp + (this.currentTime * 1000);
+            console.log("> liveStreamPlayTimestamp", liveStreamPlayTimestamp);
+        });
+
+        var flvPlayer = flvjs.createPlayer({type: 'flv', url: flvUrl});
+        flvPlayer.attachMediaElement(videoElement);
+        flvPlayer.on(flvjs.Events.METADATA_ARRIVED, function (data) {
+            console.log('%c> METADATA_ARRIVED', "color:blue");
+            console.log(data);
+        });
+        flvPlayer.on(flvjs.Events.SEI_ARRIVED, function (data) {
+            // console.log("%c > SEI_ARRIVED", "color:green");
+            // console.log(data);
+
+            if (liveStreamStartTimestamp == null) {
+                liveStreamStartTimestamp = parseInt(data.data);
+                console.log("%c> liveStreamStartTimestamp", "color:red", liveStreamStartTimestamp);
+            }
+        });
+
+        flvPlayer.load();
+        flvPlayer.play();
+    }
+</script>
+</body>
+</html>

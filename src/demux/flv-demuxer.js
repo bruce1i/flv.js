@@ -54,6 +54,7 @@ class FLVDemuxer {
         this._onMediaInfo = null;
         this._onMetaDataArrived = null;
         this._onScriptDataArrived = null;
+        this._onSeiDataArrived = null;
         this._onTrackMetadata = null;
         this._onDataAvailable = null;
 
@@ -126,6 +127,7 @@ class FLVDemuxer {
         this._onMediaInfo = null;
         this._onMetaDataArrived = null;
         this._onScriptDataArrived = null;
+        this._onSeiDataArrived = null;
         this._onTrackMetadata = null;
         this._onDataAvailable = null;
     }
@@ -193,6 +195,14 @@ class FLVDemuxer {
 
     set onScriptDataArrived(callback) {
         this._onScriptDataArrived = callback;
+    }
+
+    get onSeiDataArrived() {
+        return this._onSeiDataArrived;
+    }
+
+    set onSeiDataArrived(callback) {
+        this._onSeiDataArrived = callback;
     }
 
     // prototype: function(type: number, info: string): void
@@ -1065,16 +1075,24 @@ class FLVDemuxer {
             }
 
             let unitType = v.getUint8(offset + lengthSize) & 0x1F;
-
-            if (unitType === 5) {  // IDR
-                keyframe = true;
-            }
-
             let data = new Uint8Array(arrayBuffer, dataOffset + offset, lengthSize + naluSize);
             let unit = {type: unitType, data: data};
+
+            if (unitType === 5) {
+                // IDR
+                keyframe = true;
+            } else if (unitType === 6) {
+                // SEI
+                if (this._onSeiDataArrived) {
+                    this._onSeiDataArrived({
+                        uuid: null,
+                        data: String.fromCharCode.apply(null, data.subarray(7, 20))
+                    });
+                }
+            }
+
             units.push(unit);
             length += data.byteLength;
-
             offset += lengthSize + naluSize;
         }
 
